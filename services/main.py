@@ -1,27 +1,19 @@
 from fastapi import FastAPI, Depends, HTTPException
 from sqlalchemy.orm import Session
 
-from models import SessionLocal, Password
+from models import Password
 import util
 
 app = FastAPI()
 
 
-def get_db():
-    db = SessionLocal()
-    try:
-        yield db
-    finally:
-        db.close()
-
-
 @app.get("/status")
-async def get_status(db: Session = Depends(get_db)):
+async def get_status(db: Session = Depends(util.get_db)):
     return {"working": True}
 
 
 @app.post("/create")
-async def create_password(guest: str, slug: str, db: Session = Depends(get_db)):
+async def create_password(guest: str, slug: str, db: Session = Depends(util.get_db)):
     if not util.is_guest_valid(db, guest):
         raise HTTPException(status_code=403, detail="Guest is not valid")
 
@@ -37,7 +29,7 @@ async def create_password(guest: str, slug: str, db: Session = Depends(get_db)):
 
 
 @app.get("/get/{slug}")
-async def get_password(slug: str, guest: str, db: Session = Depends(get_db)):
+async def get_password(slug: str, guest: str, db: Session = Depends(util.get_db)):
     if not util.is_guest_valid(db, guest):
         raise HTTPException(status_code=403, detail="Guest is not valid")
 
@@ -47,3 +39,14 @@ async def get_password(slug: str, guest: str, db: Session = Depends(get_db)):
         raise HTTPException(status_code=404, detail="Password not found")
 
     return {"key": password.key}
+
+
+@app.get("/search")
+async def search_passwords(guest: str, q: str, db: Session = Depends(util.get_db)):
+    if not util.is_guest_valid(db, guest):
+        raise HTTPException(status_code=403, detail="Guest is not valid")
+
+    query = q.strip().lower().replace(" ", "_")
+    passwords = db.query(Password).filter(Password.slug.contains(query)).all()
+
+    return {"keys": [password.slug for password in passwords]}

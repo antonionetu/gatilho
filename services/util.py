@@ -1,7 +1,20 @@
 import random
 import string
+from functools import wraps
+from typing import Callable, Awaitable
 
-from models import Guest
+from fastapi import HTTPException, Depends
+from sqlalchemy.orm import Session
+
+from models import Guest, SessionLocal
+
+
+def get_db():
+    db = SessionLocal()
+    try:
+        yield db
+    finally:
+        db.close()
 
 
 def is_guest_valid(db, guest):
