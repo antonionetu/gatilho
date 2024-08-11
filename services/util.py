@@ -1,10 +1,5 @@
 import random
 import string
-from functools import wraps
-from typing import Callable, Awaitable
-
-from fastapi import HTTPException, Depends
-from sqlalchemy.orm import Session
 
 from models import Guest, SessionLocal
 
